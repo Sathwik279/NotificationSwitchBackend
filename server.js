@@ -76,8 +76,19 @@ async function startServer() {
     await sequelize.authenticate();
     console.log('✅ Database connection established successfully.');
     
+    // Check if we need to run migration
+    if (process.env.RUN_MIGRATION === 'true') {
+      const { fixUserSchema } = require('./migrations/fix-user-schema');
+      await fixUserSchema();
+    }
+    
     // Sync database models (create tables if they don't exist)
-    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+    // Use force: true only if FORCE_SYNC=true (WARNING: This drops all data!)
+    const syncOptions = process.env.FORCE_SYNC === 'true' ? 
+      { force: true } : 
+      { alter: process.env.NODE_ENV === 'development' };
+    
+    await sequelize.sync(syncOptions);
     console.log('✅ Database models synchronized.');
     
     // Start server
