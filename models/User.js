@@ -32,14 +32,10 @@ const User = sequelize.define('User', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  googleId: {
+  firebaseUid: {
     type: DataTypes.STRING,
-    allowNull: true, // for Google OAuth users
+    allowNull: false, // Firebase UID is required
     unique: true
-  },
-  authProvider: {
-    type: DataTypes.ENUM('local', 'google'),
-    defaultValue: 'local'
   },
   emailVerified: {
     type: DataTypes.BOOLEAN,
@@ -71,12 +67,7 @@ const User = sequelize.define('User', {
     },
     {
       unique: true,
-      fields: ['googleId'],
-      where: {
-        googleId: {
-          [Op.ne]: null
-        }
-      }
+      fields: ['firebaseUid']
     }
   ]
 });

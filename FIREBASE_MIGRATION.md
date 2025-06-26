@@ -1,48 +1,47 @@
-# Firebase Migration Complete
+# Firebase Migration to Option 2 Complete
 
 ## Overview
-Successfully converted the backend from Google OAuth + Passport to Firebase Authentication completely.
+Successfully converted the backend from Firebase Admin SDK verification to simple JWT token decoding (Option 2 approach).
 
 ## Changes Made
 
-### 1. **Server.js Updates**
-- ✅ Removed session middleware (`express-session`)
-- ✅ Removed Passport.js middleware
-- ✅ Removed Passport configuration import
-- ✅ Made database connection optional for development
-- ✅ Cleaner, more focused server setup
+### 1. **Authentication Approach**
+- ✅ Removed Firebase Admin SDK dependencies
+- ✅ Implemented JWT token decoding without verification
+- ✅ Using `jsonwebtoken` library for decoding Firebase ID tokens
+- ✅ Backend trusts token data from authenticated Android app
 
 ### 2. **Dependencies Cleanup**
 - ✅ Removed unused packages:
   - `passport`
   - `passport-google-oauth20`
   - `express-session`
-  - `jsonwebtoken` (not needed with Firebase)
-- ✅ Kept only Firebase Admin SDK for authentication
+  - `firebase-admin` (removed for Option 2)
+- ✅ Added `jsonwebtoken` for token decoding
 
 ### 3. **Authentication Middleware**
-- ✅ Using `authenticateFirebaseToken` middleware
-- ✅ Firebase ID token verification
-- ✅ User info extracted from Firebase token
-- ✅ Proper error handling for invalid tokens
+- ✅ Using `authenticateFirebaseToken` middleware with JWT decoding
+- ✅ Firebase ID token decoding (without verification)
+- ✅ User info extracted from decoded token
+- ✅ Proper error handling for invalid token format
 
-### 4. **Route Updates**
-- ✅ Updated all user routes to use `authenticateFirebaseToken`
-- ✅ Fixed user lookup to use `firebaseUid` instead of database ID
-- ✅ Updated user profile, update, and delete operations
+### 4. **Database Model Updates**
+- ✅ Updated User model to use `firebaseUid` instead of `googleId`
+- ✅ Removed old Google OAuth fields (`authProvider`, `googleId`)
+- ✅ Added unique index on `firebaseUid`
 - ✅ Firebase authentication working correctly
 
 ### 5. **Configuration**
-- ✅ Removed `config/passport.js` (no longer needed)
-- ✅ Firebase configuration in `config/firebase.js`
-- ✅ Updated `.env.example` with Firebase variables only
+- ✅ Removed `config/firebase.js` (no longer needed)
+- ✅ Removed Firebase Admin SDK configuration
+- ✅ Updated dependencies to use `jsonwebtoken` only
 
 ## Current Status
-- ✅ Server starts successfully
-- ✅ Firebase authentication middleware working
-- ✅ All routes properly configured
+- ✅ Server starts successfully with Option 2 implementation
+- ✅ JWT token decoding middleware working
+- ✅ All routes properly configured for Firebase UID
 - ✅ Health check endpoint functional
-- ✅ API documentation endpoint working
+- ✅ Database model updated for Firebase authentication
 
 ## API Endpoints
 - `GET /` - API information
@@ -55,13 +54,13 @@ Successfully converted the backend from Google OAuth + Passport to Firebase Auth
 - `DELETE /api/users/profile` - Delete user profile
 - `GET /api/users/` - Get all users (admin)
 
-## Firebase Integration
-The backend now fully uses Firebase Authentication:
+## Firebase Integration (Option 2)
+The backend now uses simplified Firebase Authentication:
 - Client apps authenticate with Firebase
 - Firebase ID tokens are sent to backend
-- Backend verifies tokens with Firebase Admin SDK
+- Backend decodes tokens using `jsonwebtoken` (no verification)
 - User data stored in PostgreSQL with `firebaseUid` reference
-- No more Google OAuth dependencies
+- No Firebase Admin SDK dependencies
 
 ## Next Steps
 1. **Database Setup**: Configure PostgreSQL for production use
