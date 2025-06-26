@@ -71,8 +71,8 @@ const User = sequelize.define('User', {
 // Instance methods
 User.prototype.toJSON = function() {
   const values = Object.assign({}, this.get());
-  // Remove sensitive information
-  delete values.firebaseUid;
+  // Keep firebaseUid for client compatibility
+  // Only remove truly sensitive data if any (currently none)
   return values;
 };
 
