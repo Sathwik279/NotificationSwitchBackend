@@ -1,5 +1,5 @@
 const express = require('express');
-const { admin } = require('../config/firebase');
+const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { authenticateFirebaseToken } = require('../middleware/auth');
 const router = express.Router();
@@ -16,31 +16,47 @@ router.post('/verify', async (req, res) => {
       });
     }
 
-    // Verify the Firebase ID token
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    // Decode the Firebase ID token (without verification)
+    const decodedToken = jwt.decode(idToken);
+    
+    if (!decodedToken) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token format'
+      });
+    }
+    
+    // Extract user info from decoded token
+    const userInfo = {
+      uid: decodedToken.sub || decodedToken.user_id,
+      email: decodedToken.email,
+      name: decodedToken.name,
+      picture: decodedToken.picture,
+      emailVerified: decodedToken.email_verified
+    };
     
     // Check if user exists in our database
     let user = await User.findOne({
-      where: { firebaseUid: decodedToken.uid }
+      where: { firebaseUid: userInfo.uid }
     });
 
     if (user) {
       // Update existing user
       user = await user.update({
-        email: decodedToken.email,
-        name: decodedToken.name || user.name,
-        profilePicture: decodedToken.picture || user.profilePicture,
-        emailVerified: decodedToken.email_verified || false,
+        email: userInfo.email,
+        name: userInfo.name || user.name,
+        profilePicture: userInfo.picture || user.profilePicture,
+        emailVerified: userInfo.emailVerified || false,
         lastLogin: new Date()
       });
     } else {
       // Create new user
       user = await User.create({
-        firebaseUid: decodedToken.uid,
-        email: decodedToken.email,
-        name: decodedToken.name || decodedToken.email.split('@')[0],
-        profilePicture: decodedToken.picture,
-        emailVerified: decodedToken.email_verified || false,
+        firebaseUid: userInfo.uid,
+        email: userInfo.email,
+        name: userInfo.name || userInfo.email.split('@')[0],
+        profilePicture: userInfo.picture,
+        emailVerified: userInfo.emailVerified || false,
         lastLogin: new Date()
       });
     }
@@ -49,15 +65,11 @@ router.post('/verify', async (req, res) => {
       success: true,
       message: 'Authentication successful',
       user: user,
-      firebaseUser: {
-        uid: decodedToken.uid,
-        email: decodedToken.email,
-        emailVerified: decodedToken.email_verified
-      }
+      firebaseUser: userInfo
     });
 
   } catch (error) {
-    console.error('Firebase auth verification error:', error);
+    console.error('Token processing error:', error);
     res.status(401).json({
       success: false,
       message: 'Invalid Firebase token',
@@ -96,70 +108,17 @@ router.get('/me', authenticateFirebaseToken, async (req, res) => {
   }
 });
 
-// Logout (revoke Firebase tokens)
-router.post('/logout', authenticateFirebaseToken, async (req, res) => {
+// Health check endpoint
+router.get('/health', async (req, res) => {
   try {
-    // Revoke all refresh tokens for the user
-    await admin.auth().revokeRefreshTokens(req.user.uid);
-
     res.status(200).json({
       success: true,
-      message: 'Logged out successfully'
-    });
-
-  } catch (error) {
-    console.error('Error during logout:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error during logout'
-    });
-  }
-});
-
-// Delete user account
-router.delete('/delete-account', authenticateFirebaseToken, async (req, res) => {
-  try {
-    // Delete from our database
-    const user = await User.findOne({
-      where: { firebaseUid: req.user.uid }
-    });
-
-    if (user) {
-      await user.destroy();
-    }
-
-    // Delete from Firebase
-    await admin.auth().deleteUser(req.user.uid);
-
-    res.status(200).json({
-      success: true,
-      message: 'Account deleted successfully'
-    });
-
-  } catch (error) {
-    console.error('Error deleting account:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error deleting account'
-    });
-  }
-});
-
-// Health check for Firebase connection
-router.get('/firebase-status', async (req, res) => {
-  try {
-    // Try to get Firebase project info
-    const project = await admin.auth().getUser('test-uid').catch(() => null);
-    
-    res.status(200).json({
-      success: true,
-      message: 'Firebase connection is healthy',
-      projectId: process.env.FIREBASE_PROJECT_ID
+      message: 'Auth service is healthy'
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Firebase connection issue',
+      message: 'Auth service issue',
       error: error.message
     });
   }

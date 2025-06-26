@@ -1,4 +1,4 @@
-const { DataTypes } = require('sequelize');
+const { DataTypes, Op } = require('sequelize');
 const { sequelize } = require('../config/database');
 
 const User = sequelize.define('User', {
@@ -6,14 +6,6 @@ const User = sequelize.define('User', {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
-  },
-  firebaseUid: {
-    type: DataTypes.STRING,
-    unique: true,
-    allowNull: false,
-    validate: {
-      notEmpty: true
-    }
   },
   email: {
     type: DataTypes.STRING,
@@ -23,6 +15,10 @@ const User = sequelize.define('User', {
       isEmail: true,
       notEmpty: true
     }
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: true, // null for Google OAuth users
   },
   name: {
     type: DataTypes.STRING,
@@ -35,6 +31,15 @@ const User = sequelize.define('User', {
   profilePicture: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  googleId: {
+    type: DataTypes.STRING,
+    allowNull: true, // for Google OAuth users
+    unique: true
+  },
+  authProvider: {
+    type: DataTypes.ENUM('local', 'google'),
+    defaultValue: 'local'
   },
   emailVerified: {
     type: DataTypes.BOOLEAN,
@@ -62,11 +67,16 @@ const User = sequelize.define('User', {
   indexes: [
     {
       unique: true,
-      fields: ['firebaseUid']
+      fields: ['email']
     },
     {
       unique: true,
-      fields: ['email']
+      fields: ['googleId'],
+      where: {
+        googleId: {
+          [Op.ne]: null
+        }
+      }
     }
   ]
 });
