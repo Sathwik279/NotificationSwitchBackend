@@ -27,6 +27,13 @@ async function fixUserSchema() {
       console.log('ℹ️  authProvider column not found (already removed)');
     }
     
+    try {
+      await sequelize.query('ALTER TABLE users DROP COLUMN IF EXISTS "password"');
+      console.log('✅ Removed password column (not needed for Firebase auth)');
+    } catch (error) {
+      console.log('ℹ️  password column not found (already removed)');
+    }
+    
     // Drop old enum type if it exists
     try {
       await sequelize.query('DROP TYPE IF EXISTS "enum_users_authProvider"');

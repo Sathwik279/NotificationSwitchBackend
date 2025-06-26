@@ -16,10 +16,6 @@ const User = sequelize.define('User', {
       notEmpty: true
     }
   },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: true, // null for Google OAuth users
-  },
   name: {
     type: DataTypes.STRING,
     allowNull: false,
