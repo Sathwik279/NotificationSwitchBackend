@@ -1,5 +1,7 @@
 # Notification Switch Backend
 Basically this application is used to continously monitor the notifications occuring in the mobile and store them so that user dont miss any and also helps to search any  otps or information in the notifications.
+
+
 A Node.js backend with PostgreSQL and Firebase Authentication for the Notification Switch Android app.
 
 ## Features
